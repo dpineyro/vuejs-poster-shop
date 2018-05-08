@@ -1,4 +1,5 @@
 var PRICE = 9.99;
+
 new Vue({
     el: '#app',
     data: {
@@ -10,9 +11,35 @@ new Vue({
             {id:4,title: 'Item 4'}
             
         ],
-        cart:[]
+        items:[],
+        cart:[],
+        results:[],
+        newSearch: 'anime',
+        lastSearch: '',
+        loading: false,
+        price: PRICE
     },
     methods: {
+        appendItems: function(){
+            console.log('append items');
+        },
+        onSubmit: function(){
+            //console.log("Submitted");
+            //console.log(this.search);
+            //console.log(this.$http);
+            this.items = [];
+            this.loading = true;
+            this.$http
+                .get('/search/'.concat(this.newSearch))
+                .then(function(response) {
+                    //console.log(response.data);
+                    this.lastSearch = this.newSearch;
+                    this.results = response.data;
+                    this.items = response.data.slice(0, 10);
+                    this.loading = false;
+                })
+            ;
+        },
         addItem: function(index){
             //console.log('AddITem');
             this.total += PRICE;
@@ -25,6 +52,7 @@ new Vue({
                 if(this.cart[i].id === item.id){
                     found = true;
                     this.cart[i].qty++;
+                    break;
                 }
             }
             if(!found){
@@ -59,5 +87,17 @@ new Vue({
         currency: function(price){
             return '$'.concat(price.toFixed(2));//5.0900090 to 5.09
         }
+    },
+    mounted: function(){
+        this.onSubmit();
+
+        var vueInstance = this;
+        var elem = document.getElementById('product-list-bottom');
+        var watcher = scrollMonitor.create(elem);
+        watcher.enterViewport(function(){
+            //console.log('Entered viewport.');
+            vueInstance.appendItems();
+        });
     }
 });
+
